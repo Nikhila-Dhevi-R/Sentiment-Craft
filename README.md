@@ -23,7 +23,7 @@ A visually engaging **Flask-based Sentiment Analysis** web application that pred
 - Animated sentiment emoji
 - Prediction badge
 
-### 📝 Single Text Analysis
+### Single Text Analysis
 - Enter a review manually
 - Instant sentiment prediction
 
@@ -125,6 +125,6 @@ Download Predicted CSV
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Nikhila Dhevi R**
