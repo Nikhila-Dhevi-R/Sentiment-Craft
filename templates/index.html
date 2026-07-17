@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="Minecraft-themed Sentiment Analyser — upload your reviews CSV and mine the sentiment data instantly." />
+  <title>Sentiment Analyser | Mine Your Opinions</title>
+
+  <!-- Pixel / display fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Rajdhani:wght@400;600;700&display=swap"
+    rel="stylesheet" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+
+<body>
+
+  <!-- Background particles -->
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+  <!-- Toast container -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- Full-screen loading overlay -->
+  <div id="loading-overlay" role="status" aria-label="Processing">
+    <p class="loading-title">⚒ &nbsp;Analysing Reviews &nbsp;⚒</p>
+    <div class="mc-bar-wrap">
+      <div class="mc-bar-inner" id="mc-bar"></div>
+    </div>
+    <p class="loading-status" id="loading-status">Mining Opinions...</p>
+  </div>
+
+  <div class="page-wrapper">
+
+    <!-- ── Header ─────────────────────────────────────────────── -->
+    <header class="mc-header">
+      <h1>⛏ Sentiment Analyser ⛏</h1>
+      <p>Mine the meaning hidden in every review</p>
+    </header>
+
+    <!-- ── Main ───────────────────────────────────────────────── -->
+    <main class="main-content">
+
+      <!-- Upload Card -->
+      <div class="stone-card upload-card">
+        <p class="section-label">📂 Upload CSV File</p>
+
+        <form id="upload-form" action="/predict" method="POST" enctype="multipart/form-data" novalidate>
+
+          <!-- Drag-and-drop zone -->
+          <div id="drop-zone" class="drop-zone" role="button" tabindex="0"
+            aria-label="Drag and drop CSV file here, or click to browse">
+            <span class="drop-icon">📦</span>
+            <p>Drag &amp; drop your CSV here</p>
+            <small>or click to browse your files</small>
+            <br /><br />
+            <button type="button" id="browse-btn" class="btn btn-secondary">
+              📁 Browse File
+            </button>
+            <input type="file" id="file-input" name="file" accept=".csv" />
+          </div>
+
+          <!-- Selected file info strip -->
+          <div id="file-info" class="file-info">
+            <span id="file-label">No file selected</span>
+          </div>
+
+          <!-- Optional: tell the app which column holds reviews -->
+          <div class="col-hint-wrap">
+            <label for="column-name">
+              Review column name
+              <span style="color:var(--text-dim); font-weight:400"> (optional — leave blank to auto-detect)</span>
+            </label>
+            <input type="text" id="column-name" name="column" placeholder="e.g. review, text, comment…" />
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" id="analyse-btn" class="btn btn-primary btn-full btn-large">
+            ⚒ Analyse CSV
+          </button>
+        </form>
+      </div><!-- /upload-card -->
+
+      <!-- Single-text prediction (AJAX, no upload needed) -->
+      <div class="stone-card upload-card" style="margin-top:1.75rem;">
+        <div class="text-input-section" style="padding-top:0; border:none;">
+          <p class="section-label">✏️ Quick Text Prediction</p>
+          <textarea id="single-review" placeholder="Paste a single review here to get an instant prediction…"
+            rows="4"></textarea>
+          <div id="text-result" class="inline-result">
+            <span id="text-result-label"></span>
+          </div>
+          <button type="button" id="analyse-text-btn" class="btn btn-primary btn-full" style="margin-top:0.9rem;">
+            Analyse Text
+          </button>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <footer>
+      <p>Built with <span>⛏</span> &amp; Machine Learning &nbsp;|&nbsp; Sentiment Analyser</p>
+    </footer>
+
+  </div><!-- /page-wrapper -->
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>

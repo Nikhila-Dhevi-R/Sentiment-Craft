@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sentiment analysis results dashboard — review predictions, statistics, and charts." />
+  <title>Results Dashboard | Sentiment Analyser</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+
+  <!-- Chart.js (loaded before our script) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Background particles -->
+<canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+<!-- Toast container -->
+<div id="toast-container" aria-live="polite"></div>
+
+<div class="page-wrapper">
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <header class="mc-header">
+    <h1>📊 Analysis Results 📊</h1>
+    <p>Your sentiments have been mined successfully</p>
+    <span class="nav-badge">[ RESULTS DASHBOARD ]</span>
+  </header>
+
+  <!-- ── Main ────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- Action bar -->
+    <div class="action-bar">
+      <a href="/" class="btn btn-secondary">← Mine Again</a>
+      <a href="/download" id="download-btn" class="btn btn-primary">
+        ⬇ Download Results CSV
+      </a>
+    </div>
+
+    <!-- ── Stat Cards ────────────────────────────────────────── -->
+    <div class="stats-grid">
+
+      <!-- Total Reviews -->
+      <div class="stone-card stat-card">
+        <span class="stat-icon">📝</span>
+        <span class="stat-value" id="stat-total">{{ stats.total }}</span>
+        <span class="stat-label">Total Reviews</span>
+      </div>
+
+      <!-- Positive % -->
+      <div class="stone-card stat-card card-positive">
+        <span class="stat-icon">🟢</span>
+        <span class="stat-value">{{ stats.pos_pct }}%</span>
+        <span class="stat-label">Positive Reviews</span>
+      </div>
+
+      <!-- Negative % -->
+      <div class="stone-card stat-card card-negative">
+        <span class="stat-icon">🔴</span>
+        <span class="stat-value">{{ stats.neg_pct }}%</span>
+        <span class="stat-label">Negative Reviews</span>
+      </div>
+
+      <!-- Overall Sentiment with dynamic class -->
+      <div class="stone-card stat-card card-overall
+                  {% if stats.pos_pct > 70 %}mostly-positive
+                  {% elif stats.pos_pct >= 40 %}balanced
+                  {% else %}mostly-negative{% endif %}">
+        <span class="stat-icon">📈</span>
+        <span class="stat-value">
+          {% if stats.pos_pct > 70 %}Positive
+          {% elif stats.pos_pct >= 40 %}Balanced
+          {% else %}Negative{% endif %}
+        </span>
+        <span class="stat-label">Overall Sentiment</span>
+      </div>
+
+    </div><!-- /stats-grid -->
+
+    <!-- ── Emoji & Chart row ─────────────────────────────────── -->
+    <div class="charts-section">
+
+      <!-- Mood emoji -->
+      <div class="stone-card chart-card">
+        <p class="chart-title">Overall Mood</p>
+        <div class="emoji-section">
+          <span class="mood-emoji" id="mood-emoji" data-pos="{{ stats.pos_pct }}"></span>
+          <span class="mood-label" id="mood-label">Calculating…</span>
+        </div>
+
+        <!-- Mini breakdown table -->
+        <table style="width:100%; margin-top:1.5rem; font-size:0.95rem;">
+          <tbody>
+            <tr>
+              <td style="padding:0.4rem 0; color:var(--text-dim);">🟢 Positive</td>
+              <td style="text-align:right; color:var(--pixel-green); font-weight:700;">
+                {{ stats.positive }} reviews
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:0.4rem 0; color:var(--text-dim);">🔴 Negative</td>
+              <td style="text-align:right; color:var(--pixel-red); font-weight:700;">
+                {{ stats.negative }} reviews
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pie chart -->
+      <div class="stone-card chart-card">
+        <p class="chart-title">Sentiment Distribution</p>
+        <div class="chart-container">
+          <canvas id="pie-chart"
+                  data-positive="{{ stats.positive }}"
+                  data-negative="{{ stats.negative }}"
+                  aria-label="Pie chart showing positive vs negative sentiment distribution"
+                  role="img">
+          </canvas>
+        </div>
+      </div>
+
+    </div><!-- /charts-section -->
+
+    <!-- ── Results Table ─────────────────────────────────────── -->
+    <div class="stone-card table-section" style="padding:1.75rem 1.5rem;">
+      <p class="section-label">🗂 Review Predictions</p>
+
+      <!-- Search + per-page -->
+      <div class="table-controls">
+        <input type="search" id="table-search" class="search-box"
+               placeholder="🔍  Search reviews…" aria-label="Search reviews" />
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrapper">
+        <table id="results-table">
+          <thead>
+            <tr>
+              <th style="width:52px; text-align:center;">#</th>
+              <th data-col="0">
+                Review <span class="sort-icon">↕</span>
+              </th>
+              <th data-col="1" style="width:160px;">
+                Prediction <span class="sort-icon">↕</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody">
+            {% for row in rows %}
+            <tr>
+              <td class="row-num">{{ loop.index }}</td>
+              <td>{{ row['Review'] }}</td>
+              <td>
+                {% if row['Prediction'] == 'Positive' %}
+                  <span class="badge badge-positive">🟢 Positive</span>
+                {% else %}
+                  <span class="badge badge-negative">🔴 Negative</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="3" style="text-align:center; color:var(--text-dim); padding:2rem;">
+                No data found.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div><!-- /table-wrapper -->
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination">
+        <button class="page-btn" id="prev-page" disabled aria-label="Previous page">‹ Prev</button>
+        <span class="page-info" id="page-info">Page 1</span>
+        <button class="page-btn" id="next-page" aria-label="Next page">Next ›</button>
+      </div>
+
+    </div><!-- /table-section -->
+
+  </main>
+
+  <!-- ── Footer ──────────────────────────────────────────────── -->
+  <footer>
+    <p>Built with <span>⛏</span> &amp; Machine Learning &nbsp;|&nbsp; Sentiment Analyser</p>
+  </footer>
+
+</div><!-- /page-wrapper -->
+
+<!-- Main script (includes chart init, emoji, table logic) -->
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<script>
+  // Fire a success toast once the results page loads
+  window.addEventListener('load', () => {
+    showToast('✅ Analysis complete! Your results are ready.', 'success', 4000);
+  });
+</script>
+
+</body>
+</html>
